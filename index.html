@@ -1,26 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git Update Page</title>
-    <style>
-        /* This sets the background to black and text to white */
-        body {
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Smart Mirror</title>
+
+<style>
+/* === GLOBAL === */
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: "Segoe UI", Arial, sans-serif;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* === LAYOUT === */
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+}
+
+/* === CLOCK === */
+#clock {
+  font-size: 96px;
+  font-weight: 300;
+}
+
+/* === DATE === */
+#date {
+  font-size: 28px;
+  margin-top: 10px;
+}
+
+/* === WEATHER === */
+.weather {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.weather img {
+  width: 80px;
+  height: 80px;
+}
+
+.weather-info {
+  font-size: 28px;
+}
+
+/* === SETTINGS BUTTON === */
+.settings-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 26px;
+  padding: 12px 20px;
+  border: 2px solid white;
+  background: black;
+  color: white;
+}
+
+/* === SETTINGS PANEL === */
+.settings {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: black;
+  padding: 40px;
+}
+
+.settings h2 {
+  font-size: 36px;
+}
+
+.city-btn {
+  display: block;
+  font-size: 28px;
+  padding: 14px;
+  margin: 10px 0;
+  border: 2px solid white;
+  background: black;
+  color: white;
+  text-align: left;
+}
+</style>
 </head>
+
 <body>
 
-    <h1>This is updated from Git222</h1>
+<div class="container">
+  <div>
+    <div id="clock">--:--</div>
+    <div id="date">Loading...</div>
+  </div>
+
+  <div class="weather">
+    <img id="weatherIcon" src="">
+    <div class="weather-info">
+      <div id="temp">--°C</div>
+      <div id="condition">Loading...</div>
+      <div id="city">India</div>
+    </div>
+  </div>
+</div>
+
+<button class="settings-btn" onclick="openSettings()">⚙</button>
+
+<!-- SETTINGS -->
+<div class="settings" id="settings">
+  <h2>Select City</h2>
+
+  <button class="city-btn" onclick="setCity('Mumbai')">Mumbai</button>
+  <button class="city-btn" onclick="setCity('Delhi')">Delhi</button>
+  <button class="city-btn" onclick="setCity('Bengaluru')">Bengaluru</button>
+  <button class="city-btn" onclick="setCity('Chennai')">Chennai</button>
+  <button class="city-btn" onclick="setCity('Kolkata')">Kolkata</button>
+  <button class="city-btn" onclick="setCity('Hyderabad')">Hyderabad</button>
+  <button class="city-btn" onclick="setCity('Ahmedabad')">Ahmedabad</button>
+
+  <button class="city-btn" onclick="closeSettings()">Close</button>
+</div>
+
+<script>
+/* === CONFIG === */
+const API_KEY = "bb978ed84a24dfb167afe4622a445d3b";
+let city = localStorage.getItem("city") || "Mumbai";
+
+/* === CLOCK (IST) === */
+function updateClock() {
+  const now = new Date().toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  document.getElementById("clock").innerText = now;
+}
+
+function updateDate() {
+  const date = new Date().toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  document.getElementById("date").innerText = date;
+}
+
+/* === WEATHER === */
+async function loadWeather() {
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city},IN&units=metric&appid=${API_KEY}`
+    );
+    const data = await res.json();
+
+    document.getElementById("temp").innerText = Math.round(data.main.temp) + "°C";
+    document.getElementById("condition").innerText = data.weather[0].main;
+    document.getElementById("city").innerText = city;
+
+    const icon = data.weather[0].icon;
+    document.getElementById("weatherIcon").src =
+      `https://openweathermap.org/img/wn/${icon}@2x.png`;
+
+  } catch {
+    document.getElementById("condition").innerText = "No data";
+  }
+}
+
+/* === SETTINGS === */
+function openSettings() {
+  document.getElementById("settings").style.display = "block";
+}
+
+function closeSettings() {
+  document.getElementById("settings").style.display = "none";
+}
+
+function setCity(c) {
+  city = c;
+  localStorage.setItem("city", c);
+  loadWeather();
+  closeSettings();
+}
+
+/* === INIT === */
+updateClock();
+updateDate();
+loadWeather();
+
+setInterval(updateClock, 1000);
+setInterval(updateDate, 60000);
+setInterval(loadWeather, 600000); // every 10 min
+</script>
 
 </body>
 </html>
